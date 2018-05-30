@@ -1,5 +1,5 @@
-#'Compute power for Mutliple Regression with Three Predictors
-#'Requires correlatiosn between all variables as sample size. Means, sds, and alpha are option. Also computes Power(All)
+#'Compute power for Multiple Regression with Three Predictors
+#'Requires correlations between all variables as sample size. Means, sds, and alpha are option. Also computes Power(All)
 #'@param ry1 Correlation between DV (y) and first predictor (1)
 #'@param ry2 Correlation between DV (y) and second predictor (2)
 #'@param ry3 Correlation between DV (y) and third predictor (3)
@@ -23,165 +23,181 @@
 #'
 #'
 
-MRC_all<-function(ry1=NULL, ry2=NULL, ry3=NULL, r12=NULL, r13=NULL, r23=NULL,n=NULL, alpha=.05, rep = 10000,
-                        my=0,m1=0,m2=0,m3=0, sy=1,s1=1,s2=1,s3=1)
-  {
-
-pred<-NA
-pred[is.null(r23)]<-2
-pred[!is.null(r23)]<-3
-vary<-NA
-vary<-sy^2;var1<-s1^2;var2<-s2^2; var3<-s3^2
-
-  if (pred=="2")
-
-    {pop <- MASS::mvrnorm(100000, mu = c(my, m1, m2), Sigma = matrix(c(vary, ry1, ry2,
-                                                                     ry1, var1, r12,
-                                                                     ry2, r12, var2),
-                                                                   ncol = 3), empirical = TRUE)
-    pop2 = data.frame(pop)
-    nruns = rep
-    int = numeric(nruns)
-    b1 = numeric(nruns)
-    b2 = numeric(nruns)
-    R2 = numeric(nruns)
-    F = numeric(nruns)
-    df1 = numeric(nruns)
-    df2 = numeric(nruns)
-    for (i in 1:nruns)
-    {samp <- pop2[ sample(nrow(pop2), n), ]
-    test <- lm(formula = X1 ~ X2+ X3, data = samp)
-    c<-summary(test)
-    int[i] = coef(summary(test))[1,4]
-    b1[i] = coef(summary(test))[2,4] #grabs p from each analysis
-    b2[i] = coef(summary(test))[3,4]
-    R2[i] = c$r.squared
-    F[i]<-c$fstatistic[1]
-    df1[i]<-c$fstatistic[2]
-    df2[i]<-c$fstatistic[3]}
-    Powerall = data.frame(int = int, b1 = b1, b2 = b2)
-    Powerall[4:5, "rejectb1"]<-NA
-    Powerall$rejectb1 [ b1 < alpha] <- 1
-    Powerall$rejectb1 [ b1 >= alpha] <- 0
-    Powerall[4:5, "rejectb2"]<-NA
-    Powerall$rejectb2 [ b2 < alpha] <- 1
-    Powerall$rejectb2 [ b2 >= alpha] <- 0
-    Powerall[4:5, "rejecttotal"]<-NA
-    Powerall$rejectall <- (Powerall$rejectb1+ Powerall$rejectb2)
-
-    Reject.None <-NA
-    Reject.None [Powerall$rejectall == 0]<-1
-    Reject.None [Powerall$rejectall > 0]<-0
-    Reject.One <-NA
-    Reject.One [Powerall$rejectall == 1]<-1
-    Reject.One [Powerall$rejectall != 1]<-0
-    Reject.All <-NA
-    Reject.All [Powerall$rejectall == 2]<-1
-    Reject.All [Powerall$rejectall != 2]<-0
-    is.numeric(Reject.None)
-    is.numeric(Reject.One)
-    is.numeric(Reject.All)
-
-    Power_b1<-mean(Powerall$rejectb1)
-    Power_b2<-mean(Powerall$rejectb2)
-    pR2<-1-pf(F,df1, df2)
-    Powerall$rejectR2 [pR2 < alpha] <- 1
-    Powerall$rejectR2 [pR2 >= alpha] <- 0
-    Power_R2<-mean(Powerall$rejectR2)
-    PowerAll_R0<-mean(Reject.None)
-    PowerAll_R1<-mean(Reject.One)
-    PowerAll_R2<-mean(Reject.All)
+MRC_all_josue <- function(ry1 = NULL, ry2 = NULL, ry3 = NULL, r12 = NULL, r13 = NULL, r23 = NULL, n = 100, alpha = .05, nruns = 10000,
+                          my = 0, m1 = 0, m2 = 0, m3 = 0, sy = 1, s1 = 1, s2 = 1, s3 = 1){
 
 
-    {print(paste("Sample size is ",n))}
-    {print(paste("Power R2 = ", Power_R2))}
-    {print(paste("Power b1 = ", Power_b1))}
-    {print(paste("Power b2 = ", Power_b2))}
-    {print(paste("Proportion Rejecting None = ", PowerAll_R0))}
-    {print(paste("Proportion Rejecting One = ", PowerAll_R1))}
-    {print(paste("Power ALL (Proportion Rejecting All) = ", PowerAll_R2))}
-     }
 
-  if (pred=="3")
-    {
-  pop <- MASS::mvrnorm(100000, mu = c(my, m1, m2, m3),
-                 Sigma = matrix(c(vary, ry1, ry2, ry3,
-                                  ry1, var1, r12, r13,
-                                  ry2, r12, var2, r23,
-                                  ry3, r13, r23, var3),
-                 ncol = 4), empirical = TRUE)
-  pop2 = data.frame(pop)
-  nruns = rep
-  int = numeric(nruns)
-  b1 = numeric(nruns)
-  b2 = numeric(nruns)
-  b3 = numeric(nruns)
-  R2 = numeric(nruns)
-  F = numeric(nruns)
-  df1 = numeric(nruns)
-  df2 = numeric(nruns)
-  for (i in 1:nruns)
-  {samp <- pop2[ sample(nrow(pop2), n), ]
-  test <- lm(formula = X1 ~ X2+ X3+ X4, data = samp)
-  c<-summary(test)
-  int[i] = coef(summary(test))[1,4]
-  b1[i] = coef(summary(test))[2,4] #grabs p from each analysis
-  b2[i] = coef(summary(test))[3,4]
-  b3[i] = coef(summary(test))[4,4]
-  R2[i] = c$r.squared
-  F[i]<-c$fstatistic[1]
-  df1[i]<-c$fstatistic[2]
-  df2[i]<-c$fstatistic[3]}
-  Powerall = data.frame(int = int, b1 = b1, b2 = b2, b3 = b3)
-  Powerall[4:5, "rejectb1"]<-NA
-  Powerall$rejectb1 [ b1 < alpha] <- 1
-  Powerall$rejectb1 [ b1 >= alpha] <- 0
-  Powerall[4:5, "rejectb2"]<-NA
-  Powerall$rejectb2 [ b2 < alpha] <- 1
-  Powerall$rejectb2 [ b2 >= alpha] <- 0
-  Powerall[4:5, "rejectb3"]<-NA
-  Powerall$rejectb3 [ b3 < alpha] <- 1
-  Powerall$rejectb3 [ b3 >= alpha] <- 0
-  Powerall[4:5, "rejecttotal"]<-NA
-  Powerall$rejectall <- (Powerall$rejectb1+ Powerall$rejectb2+ Powerall$rejectb3)
+  # determine if multiple regression uses 2 or 3 predictors
+  predictors <- ifelse(is.null(r23), 2, 3)
 
-  Reject.None <-NA
-  Reject.None [Powerall$rejectall == 0]<-1
-  Reject.None [Powerall$rejectall > 0]<-0
-  Reject.One <-NA
-  Reject.One [Powerall$rejectall == 1]<-1
-  Reject.One [Powerall$rejectall != 1]<-0
-  Reject.Two <-NA
-  Reject.Two [Powerall$rejectall == 2]<-1
-  Reject.Two [Powerall$rejectall != 2]<-0
-  Reject.All <-NA
-  Reject.All [Powerall$rejectall == 3]<-1
-  Reject.All [Powerall$rejectall != 3]<-0
-  is.numeric(Reject.None)
-  is.numeric(Reject.One)
-  is.numeric(Reject.Two)
-  is.numeric(Reject.All)
+  # calculate variances
+  var_y <- sy^2
+  var_1 <- s1^2
+  var_2 <- s2^2
+  if (predictors == 3) var_3 <- s3^2
 
-  Power_b1<-mean(Powerall$rejectb1)
-  Power_b2<-mean(Powerall$rejectb2)
-  Power_b3<-mean (Powerall$rejectb3)
-  pR2<-1-pf(F,df1, df2)
-  Powerall$rejectR2 [pR2 < alpha] <- 1
-  Powerall$rejectR2 [pR2 >= alpha] <- 0
-  Power_R2<-mean(Powerall$rejectR2)
-  PowerAll_R0<-mean(Reject.None)
-  PowerAll_R1<-mean(Reject.One)
-  PowerAll_R2<-mean(Reject.Two)
-  PowerAll_R3<-mean(Reject.All)
+  # begin power analysis for 2 predictor multiple regression
+  if (predictors == 2){
 
+    # check all necessary values
+    if (is.null(ry1) | is.null(ry2)| is.null(r12)){
+      stop("Make sure there are no missing correlation values for a 2 predictor regression")
+    }
 
-  {print(paste("Sample size is ",n))}
-  {print(paste("Power R2 = ", Power_R2))}
-  {print(paste("Power b1 = ", Power_b1))}
-  {print(paste("Power b2 = ", Power_b2))}
-  {print(paste("Power b3 = ", Power_b3))}
-  {print(paste("Proportion Rejecting None = ", PowerAll_R0))}
-  {print(paste("Proportion Rejecting One = ", PowerAll_R1))}
-  {print(paste("Proportion Rejecting Two = ", PowerAll_R2))}
-  {print(paste("Power ALL (Proportion Rejecting All) = ", PowerAll_R3))}
-   }}
+    # simulate population from Multivariate Normal Distribution using specified covariance matrix
+    sim_pop <- MASS::mvrnorm(n = 100000,
+                             mu = c(my, m1, m2),
+                             Sigma = matrix(c(var_y, ry1, ry2,
+                                              ry1, var_1, r12,
+                                              ry2, r12, var_2), ncol = 3),
+                             empirical = TRUE)
+    sim_pop <- data.frame(sim_pop)
+    colnames(sim_pop) <- c("y", "x1", "x2")
+
+    # initialize vectors for slopes, R-squared, F statistic, and degrees of freedom
+    b1 <- c()
+    b2 <- c()
+    r2 <- c()
+    f_stat <- c()
+    df1 <- c()
+    df2 <- c()
+
+    # simulate data
+    for (i in 1:nruns){
+      # grab a random sample from sim_pop
+      split <- sample(nrow(sim_pop), size = n)
+      samp <- sim_pop[split, ]
+
+      # run test regressions
+      test <- lm(y ~ x1 + x2, data = samp)
+      summ <- summary(test)
+
+      # grab p-values from regressions for slopes
+      b1[i] <- summ$coefficients[2, 4]
+      b2[i] <- summ$coefficients[3, 4]
+
+      # grab R-squareds, F-statistics, and degreees of freedom from regressions
+      r2[i] <- summ$r.squared
+      f_stat[i] <- summ$fstatistic[1]
+      df1[i] <- summ$fstatistic[2]
+      df2[i] <- summ$fstatistic[3]
+    }
+    # count totals for number of times we can reject the null for the parameters
+    reject_b1 <- ifelse(b1 < alpha, 1, 0)
+    reject_b2 <- ifelse(b2 < alpha, 1, 0)
+
+    # count totals for being able to reject the null for one, two, or neither of the parameters
+    reject_count <- reject_b1 + reject_b2
+    reject_none <- ifelse(reject_count == 0, 1, 0)
+    reject_one <- ifelse(reject_count == 1, 1, 0)
+    reject_all <- ifelse(reject_count == 2, 1, 0)
+
+    # count total for being able to reject R-squared
+    probability_r2 <- 1 - pf(f_stat, df1, df2)
+    reject_r2 <- ifelse(probability_r2 < alpha, 1, 0)
+
+    # calculate power for slopes, r2, and rejecting null for one, two or neither of the parameters
+    power_b1 <- mean(reject_b1)
+    power_b2 <- mean(reject_b2)
+    power_none <- mean(reject_none)
+    power_one <- mean(reject_one)
+    power_all <- mean(reject_all)
+    power_r2 <- mean(reject_r2)
+
+    # print results
+    message("Sample size is = ", n)
+    message("Power R2 = ", power_r2)
+    message("Power b1 = ", power_b1)
+    message("Power b2 = ", power_b2)
+    message("Proportion Rejecting None = ", power_none)
+    message("Proportion Rejecting One = ", power_one)
+    message("Proportion Rejecting All = ", power_all)
+  }
+
+  # begin power analysis for 3 predictor multiple regression
+  if (predictors == 3){
+
+    # check all necessary values
+    if (is.null(ry1) | is.null(ry2)| is.null(ry3) | is.null(r12) | is.null(r13) | is.null(r23)){
+      stop("Make sure there are no missing correlation values for a 3 predictor regression")
+    }
+
+    # simulate population from Multivariate Normal Distribution using specified covariance matrix
+    sim_pop <- MASS::mvrnorm(n = 100000,
+                             mu = c(my, m1, m2, m3),
+                             Sigma = matrix(c(var_y, ry1, ry2, ry3,
+                                              ry1, var_1, r12, r13,
+                                              ry2, r12, var_2, r23,
+                                              ry3, r13, r23, var_3), ncol = 4),
+                             empirical = TRUE)
+    sim_pop <- data.frame(sim_pop)
+    colnames(sim_pop) <- c("y", "x1", "x2", "x3")
+
+    # initialize vectors for slopes, R-squared, F statistic, and degrees of freedom
+    b1 <- c()
+    b2 <- c()
+    b3 <- c()
+    r2 <- c()
+    f_stat <- c()
+    df1 <- c()
+    df2 <- c()
+
+    # simulate data
+    for (i in 1:nruns){
+      # grab a random sample from sim_pop
+      split <- sample(nrow(sim_pop), size = n)
+      samp <- sim_pop[split, ]
+
+      # run test regressions
+      test <- lm(y ~ x1 + x2 + x3, data = samp)
+      summ <- summary(test)
+
+      # grab p-values from regressions for slopes
+      b1[i] <- summ$coefficients[2, 4]
+      b2[i] <- summ$coefficients[3, 4]
+      b3[i] <- summ$coefficients[4, 4]
+
+      # grab R-squareds, F-statistics, and degreees of freedom from regressions
+      r2[i] <- summ$r.squared
+      f_stat[i] <- summ$fstatistic[1]
+      df1[i] <- summ$fstatistic[2]
+      df2[i] <- summ$fstatistic[3]
+    }
+    # count totals for number of times we can reject the null for the parameters
+    reject_b1 <- ifelse(b1 < alpha, 1, 0)
+    reject_b2 <- ifelse(b2 < alpha, 1, 0)
+    reject_b3 <- ifelse(b3 < alpha, 1, 0)
+
+    # count totals for being able to reject the null for one, two, three, or none of the parameters
+    reject_count <- reject_b1 + reject_b2 + reject_b3
+    reject_none <- ifelse(reject_count == 0, 1, 0)
+    reject_one <- ifelse(reject_count == 1, 1, 0)
+    reject_two <- ifelse(reject_count == 2, 1, 0)
+    reject_all <- ifelse(reject_count == 3, 1, 0)
+
+    # count total for being able to reject R-squared
+    probability_r2 <- 1 - pf(f_stat, df1, df2)
+    reject_r2 <- ifelse(probability_r2 < alpha, 1, 0)
+
+    # calculate power for slopes, r2, and rejecting null for one, two or neither of the parameters
+    power_b1 <- mean(reject_b1)
+    power_b2 <- mean(reject_b2)
+    power_b3 <- mean(reject_b3)
+    power_none <- mean(reject_none)
+    power_one <- mean(reject_one)
+    power_two <- mean(reject_two)
+    power_all <- mean(reject_all)
+    power_r2 <- mean(reject_r2)
+
+    # print results
+    message("Sample size is = ", n)
+    message("Power R2 = ", power_r2)
+    message("Power b1 = ", power_b1)
+    message("Power b2 = ", power_b2)
+    message("Power b3 = ", power_b3)
+    message("Proportion Rejecting None = ", power_none)
+    message("Proportion Rejecting One = ", power_one)
+    message("Proportion Rejecting All = ", power_all)
+  }
+}
