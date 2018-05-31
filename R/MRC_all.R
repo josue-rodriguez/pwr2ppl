@@ -23,7 +23,7 @@
 #'
 #'
 
-MRC_all_josue <- function(ry1 = NULL, ry2 = NULL, ry3 = NULL, r12 = NULL, r13 = NULL, r23 = NULL, n = 100, alpha = .05, nruns = 10000,
+MRC_all <- function(ry1 = NULL, ry2 = NULL, ry3 = NULL, r12 = NULL, r13 = NULL, r23 = NULL, n = 100, alpha = .05, nruns = 10000,
                           my = 0, m1 = 0, m2 = 0, m3 = 0, sy = 1, s1 = 1, s2 = 1, s3 = 1){
 
 
